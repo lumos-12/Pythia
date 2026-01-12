@@ -1,235 +1,181 @@
-<p align="center">
-  <a href="https://github.com/CMU-SAFARI/Pythia">
-    <img src="logo.png" alt="Logo" width="424.8" height="120">
-  </a>
-  <h3 align="center">A Customizable Hardware Prefetching Framework Using Online Reinforcement Learning
-  </h3>
-</p>
+# Pythia：基于在线强化学习的可定制硬件预取框架
 
-<p align="center">
-    <a href="https://github.com/CMU-SAFARI/Pythia/blob/master/LICENSE">
-        <img alt="GitHub" src="https://img.shields.io/badge/License-MIT-yellow.svg">
-    </a>
-    <a href="https://github.com/CMU-SAFARI/Pythia/releases">
-        <img alt="GitHub release" src="https://img.shields.io/github/release/CMU-SAFARI/Pythia">
-    </a>
-    <a href="https://doi.org/10.5281/zenodo.5520125"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.5520125.svg" alt="DOI"></a>
-</p>
+## 目录
 
-<!-- ## Update
-### Aug 13th, 2021
-It has been brought to our attention that the Ligra and PARSEC-2.1 traces required to evaluate the artifact are not correctly getting downloaded using the `download_traces.pl` script. For now, we ask the reader to download **all** Ligra and PARSEC-2.1 traces (~10 GB) by (1) clicking on the mega link (see [Section 5](https://github.com/CMU-SAFARI/Pythia#more-traces)), and (2) clicking on "Download as ZIP" option. We are working with megatools developer to resolve the issue soon.  -->
+- [1、简介](#1简介) 
+- [2、实验环境搭建](#2实验环境搭建) 
+- [3、准备工作负载跟踪](#3准备工作负载跟踪) 
+- [4、仿真配置与执行](#4仿真配置与执行) 
+- [5、数据提取](#5数据提取) 
+- [6、结果汇总](#6结果汇总)
 
-<details open="open">
-  <summary>Table of Contents</summary>
-  <ol>
-    <li><a href="#what-is-pythia">What is Pythia?</a></li>
-    <li><a href="#about-the-framework">About the Framework</a></li>
-    <li><a href="#prerequisites">Prerequisites</a></li>
-    <li><a href="#installation">Installation</a></li>
-    <li><a href="#preparing-traces">Preparing Traces</a></li>
-    <ul>
-      <li><a href="#more-traces">More Traces</a></li>
-    </ul>
-    <li><a href="#experimental-workflow">Experimental Workflow</a></li>
-      <ul>
-        <li><a href="#launching-experiments">Launching Experiments</a></li>
-        <li><a href="#rolling-up-statistics">Rolling up Statistics</a></li>
-      </ul>
-    </li>
-    <li><a href="#hdl-implementation">HDL Implementation</a></li>
-    <li><a href="#code-walkthrough">Code Walkthrough</a></li>
-    <li><a href="#citation">Citation</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgements">Acknowledgements</a></li>
-  </ol>
-</details>
+## 1、简介
 
-## What is Pythia?
+本工作是基于[Pythia: A Customizable Hardware Prefetching Framework Using Online Reinforcement Learning](https://arxiv.org/pdf/2109.12021.pdf)的实验复现，参考代码仓库https://github.com/CMU-SAFARI/Pythia。
 
-> Pythia is a hardware-realizable, light-weight data prefetcher that uses reinforcement learning to generate accurate, timely, and system-aware prefetch requests. 
+Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线强化学习动态生成高精度、及时且系统感知的预取请求。该工作发表于MICRO 2021。
 
-Pythia formulates hardware prefetching as a reinforcement learning task. For every demand request, Pythia observes multiple different types of program context information to take a prefetch decision. For every prefetch decision, Pythia receives a numerical reward that evaluates prefetch quality under the current memory bandwidth utilization. Pythia uses this reward to reinforce the correlation between program context information and prefetch decision to generate highly accurate, timely, and system-aware prefetch requests in the future.
+*Rahul Bera、Konstantinos Kanellopoulos、Anant V. Nori、Taha Shahroodi、Sreenivas Subramoney、Onur Mutlu，" [Pythia: A Customizable Hardware Prefetching Framework Using Online Reinforcement Learning](https://arxiv.org/pdf/2109.12021.pdf) "，发表于第54届IEEE/ACM国际微体系结构研讨会（MICRO）论文集，2021年。*
 
-Pythia is presetend at MICRO 2021.
+为了验证Pythia论文中的实验结果并深入理解其性能特性，本研究采用ChampSim模拟器进行了复现实验。复现工作遵循论文中描述的方法论，利用了作者团队公开提供的源代码、仿真框架和工作负载跟踪数据。
 
-> _Rahul Bera, Konstantinos Kanellopoulos, Anant V. Nori, Taha Shahroodi, Sreenivas Subramoney, Onur Mutlu, "[Pythia: A Customizable Hardware Prefetching Framework Using Online Reinforcement Learning](https://arxiv.org/pdf/2109.12021.pdf)", In Proceedings of the 54th Annual IEEE/ACM International Symposium on Microarchitecture (MICRO), 2021_
+## 2、实验环境搭建
 
-## About The Framework
+1. 操作系统：Ubuntu 20.04（虚拟机环境）
 
-Pythia is implemented in [ChampSim simulator](https://github.com/ChampSim/ChampSim). We have significantly modified the prefetcher integration pipeline in ChampSim to add support to a wide range of prior prefetching proposals mentioned below:
+2. 安装所有必要的依赖软件包，包括GCC编译套件、CMake构建系统以及md5sum校验工具：
 
-* Stride [Fu+, MICRO'92]
-* Streamer [Chen and Baer, IEEE TC'95]
-* SMS [Somogyi+, ISCA'06]
-* AMPM [Ishii+, ICS'09]
-* Sandbox [Pugsley+, HPCA'14]
-* BOP [Michaud, HPCA'16]
-* SPP [Kim+, MICRO'16]
-* Bingo [Bakshalipour+, HPCA'19]
-* SPP+PPF [Bhatia+, ISCA'19]
-* DSPatch [Bera+, MICRO'19]
-* MLOP [Shakerinava+, DPC-3'19]
-* IPCP [Pakalapati+, ISCA'20]
+    ```bash
+    sudo apt install gcc g++ cmake md5sum
+    ```
+    
+3. 安装必要的先决条件：
 
-Most of the  prefetchers (e.g., SPP [1], Bingo [2], IPCP [3]) reuse codes from [2nd]() and [3rd]() data prefetching championships (DPC). Others (e.g., AMPM [4], SMS [5]) are implemented from scratch and shows similar relative performance reported by previous works.
-
-## Prerequisites
-
-The infrastructure has been tested with the following system configuration:
-  * G++ v6.3.0 20170516
-  * CMake v3.20.2
-  * md5sum v8.26
-  * Perl v5.24.1
-
-## Installation
-
-0. Install necessary prequisites
     ```bash
     sudo apt install perl
     ```
-1. Clone the GitHub repo
-   
-   ```bash
-   git clone https://github.com/CMU-SAFARI/Pythia.git
-   ```
-2. Clone the bloomfilter library inside Pythia home directory
-   
-   ```bash
-   cd Pythia
-   git clone https://github.com/mavam/libbf.git libbf
-   ```
-3. Build bloomfilter library. This should create the static `libbf.a` library inside `build` directory
-   
+    
+4. 从GitHub官方仓库克隆Pythia项目的完整源代码：
+
+    ```bash
+    git clone https://github.com/CMU-SAFARI/Pythia.git
+    ```
+    
+5. 进入Pythia主目录，克隆bloomfilter库到`libbf`目录：
+
+    ```bash
+    cd Pythia
+    git clone https://github.com/mavam/libbf.git libbf
+    ```
+    
+6. libbf.a构建bloomfilter库，在build目录中创建静态库：
+
     ```bash
     cd libbf
     mkdir build && cd build
     cmake ../
     make clean && make
     ```
-4. Build Pythia for single/multi core using build script. This should create the executable inside `bin` directory.
-   
-   ```bash
-   cd $PYTHIA_HOME
-   # ./build_champsim.sh <l1_pref> <l2_pref> <llc_pref> <ncores>
-   ./build_champsim.sh multi multi no 1
-   ```
-   Please use `build_champsim_highcore.sh` to build ChampSim for more than four cores.
+    
+7. 编译ChampSim仿真器，构建单核/多核版本的Pythia，在`bin`目录生成可执行文件：
 
-5. _Set appropriate environment variables as follows:_
+    ```bash
+    cd $PYTHIA_HOME
+    ./build_champsim.sh multi multi no 1
+    ```
+    
+8. 设置环境变量：
 
     ```bash
     source setvars.sh
     ```
 
-## Preparing Traces
+## 3、准备工作负载跟踪
 
-> [Update: Dec 18, 2024] The trace will be downloaded in two phases: (1) all traces, except Ligra and PARSEC workloads, will be downloaded using the automated script, and (2) the Ligra and PARSEC traces needs to be downloaded manually from Zenodo repository mentioned below. 
+原始论文使用了来自SPEC CPU2006/2017、PARSEC、Ligra和CloudSuite等基准测试套件的150个内存密集型跟踪文件。本研究选择性下载了5个trace文件用于验证部分结论，并验证文件完整性。
 
-1. Use the `download_traces.pl` perl script to download all traces, except Ligra and PARSEC.
+1. 创建trace存储目录并下载核心跟踪数据（除Ligra和PARSEC外）：
 
     ```bash
     mkdir $PYTHIA_HOME/traces/
     cd $PYTHIA_HOME/scripts/
     perl download_traces.pl --csv artifact_traces.csv --dir ../traces/
     ```
-> Note: The script should download **138** traces. Please check the final log for any incomplete downloads.
-
-2. Once the trace download completes, please verify the checksum as follows. _Please make sure all traces pass the checksum test._
+    
+2. 验证下载的跟踪文件完整性：
 
     ```bash
     cd $PYTHIA_HOME/traces
     md5sum -c ../scripts/artifact_traces.md5
     ```
+    
+3. 单独下载Ligra和PARSEC跟踪文件：
 
-3. Download the Ligra and PARSEC traces from these repositories:
-    - Ligra: https://doi.org/10.5281/zenodo.14267977
-    - PARSEC 2.1: https://doi.org/10.5281/zenodo.14268118
+    - Ligra：[https://doi.org/10.5281/zenodo.14267977](https://doi.org/10.5281/zenodo.14267977)
 
-4. If the traces are downloaded in some other path, please change the full path in `experiments/MICRO21_1C.tlist` and `experiments/MICRO21_4C.tlist` accordingly.
+    - PARSEC 2.1：[https://doi.org/10.5281/zenodo.14268118](https://doi.org/10.5281/zenodo.14268118)
 
-### More Traces
-* Our simulation infrastructure is completely compatible with all prior ChampSim traces used in CRC-2 and DPC-3. One can also convert the CVP-2 traces (courtesy of Qualcomm Datacenter Technologies) to ChampSim format using [the following converter](https://github.com/ChampSim/ChampSim/tree/master/cvp_tracer). The traces can be found in the follwing websites:
-     * CRC-2 traces: http://bit.ly/2t2nkUj
-     * DPC-3 traces: http://hpca23.cse.tamu.edu/champsim-traces/speccpu/
-     * CVP-2 traces: https://www.microarch.org/cvp1/cvp2/rules.html
+4. 若跟踪文件下载路径非默认，需修改`experiments/MICRO_1C.tlist`中的文件路径配置。
 
-## Experimental Workflow
-Our experimental workflow consists of two stages: (1) launching experiments, and (2) rolling up statistics from experiment outputs.
+## 4、仿真配置与执行
 
-### Launching Experiments
-1. To create necessary experiment commands in bulk, we will use `scripts/create_jobfile.pl`
-2. `create_jobfile.pl` requires three necessary arguments:
-      * `exe`: the full path of the executable to run
-      * `tlist`: contains trace definitions
-      * `exp`: contains knobs of the experiements to run
-3. Create experiments as follows. _Please make sure the paths used in tlist and exp files are appropriate_.
-   
-      ```bash
-      cd $PYTHIA_HOME/experiments/
-      perl ../scripts/create_jobfile.pl --exe $PYTHIA_HOME/bin/perceptron-multi-multi-no-ship-1core --tlist MICRO21_1C.tlist --exp MICRO21_1C.exp --local 1 > jobfile.sh
-      ```
+1. 使用`scripts/create_jobfile.pl`脚本批量创建实验命令。
 
-4. Go to a run directory (or create one) inside `experiements` to launch runs in the following way:
-      ```bash
-      cd experiments_1C
-      source ../jobfile.sh
-      ```
+2. 配置文件说明：
 
-5. If you have [slurm](https://slurm.schedmd.com) support to launch multiple jobs in a compute cluster, please provide `--local 0` to `create_jobfile.pl`
+    - `MICRO_1C.tlist`：指定要使用的跟踪文件列表
 
-### Rolling-up Statistics
-1. To rollup stats in bulk, we will use `scripts/rollup.pl`
-2. `rollup.pl` requires three necessary arguments:
-      * `tlist`
-      * `exp`
-      * `mfile`: specifies stat names and reduction method to rollup
-3. Rollup statistics as follows. _Please make sure the paths used in tlist and exp files are appropriate_.
-   
-      ```bash
-      cd experiements_1C/
-      perl ../../scripts/rollup.pl --tlist ../MICRO21_1C.tlist --exp ../MICRO21_1C.exp --mfile ../rollup_1C_base_config.mfile > rollup.csv
-      ```
+    - `MICRO_1C.exp`：指定预取器类型（Pythia、SPP、Bingo、MLOP等）及相关参数（预热指令数、模拟指令数、内存带宽等）
 
-4. Export the `rollup.csv` file in you favourite data processor (Python Pandas, Excel, Numbers, etc.) to gain insights.
+3. 生成实验任务脚本，确保tlist和exp文件路径正确：
 
-## HDL Implementation
-We also implement Pythia in [Chisel HDL](https://www.chisel-lang.org) to faithfully measure the area and power cost. The implementation, along with the reports from umcL65 library, can be found the following GitHub repo. Please note that the area and power projections in the sample report is different than what is reported in the paper due to different technology.
+    ```bash
+    cd experiements_1C/
+    perl ../../scripts/rollup.pl --tlist ../MICRO_1C.tlist --exp ../MICRO_1C.exp --mfile ../rollup_1C_base_config.mfile > rollup.csv
+    ```
+    
+4. 创建并进入运行目录，启动仿真实验：
 
-<p align="center">
-<a href="https://github.com/CMU-SAFARI/Pythia-HDL">Pythia-HDL</a>
-    <a href="https://github.com/CMU-SAFARI/Pythia-HDL">
-        <img alt="Build" src="https://github.com/CMU-SAFARI/Pythia-HDL/actions/workflows/test.yml/badge.svg">
-    </a>
-</p>
+    ```bash
+    mkdir -p experiments_1C
+    cd experiments_1C
+    source ../jobfile.sh
+    ```
+    
+5. 复现实验示例（与单特征预取器对比）
+   `MICRO_1C.tlist`文件示例，指定复现待使用的trace文件：
 
-## Code Walkthrough
-> Pythia was code-named Scooby (the mistery-solving dog) during the developement. So any mention of Scooby anywhere in the code inadvertently means Pythia.
+    ```Plain Text
+    NAME=482.sphinx3-417B
+    TRACE=$(PYTHIA_HOME)/traces/482.sphinx3-417B.champsintrace.Xz
+    KNOBS=
+    
+    NAME=459.GensFDTD-765B
+    TRACE=$(PYTHIA_HOME)/traces/459.GensFDTD-765B.champsintrace.XZ
+    KNOBS=
+    ```
+    
+    修改`MICRO_1C.exp`文件配置预取器：
 
-* The top-level files for Pythia are `prefetchers/scooby.cc` and `inc/scooby.h`. These two files declare and define the high-level functions for Pythia (e.g., `invoke_prefetcher`, `register_fill`, etc.). 
-* The released version of Pythia has two types of RL engine defined: _basic_ and _featurewise_. They differ only in terms of the QVStore organization (please refer to our [paper](arxiv.org/pdf/2109.12021.pdf) to know more about QVStore). The QVStore for _basic_ version is simply defined as a two-dimensional table, whereas the _featurewise_ version defines it as a hierarchichal organization of multiple small tables. The implementation of respective engines can be found in `src/` and `inc/` directories.
-* `inc/feature_knowledge.h` and `src/feature_knowldege.cc` define how to compute each program feature from the raw attributes of a deamand request. If you want to define your own feature, extend the enum `FeatureType` in `inc/feature_knowledge.h` and define its corresponding `process` function.
-* `inc/util.h` and `src/util.cc` contain all hashing functions used in our evaluation. Play around with them, as a better hash function can also provide performance benefits.
+    - 设置Warmup指令数：1亿
 
-## Citation
-If you use this framework, please cite the following paper:
-```
-@inproceedings{bera2021,
-  author = {Bera, Rahul and Kanellopoulos, Konstantinos and Nori, Anant V. and Shahroodi, Taha and Subramoney, Sreenivas and Mutlu, Onur},
-  title = {{Pythia: A Customizable Hardware Prefetching Framework Using Online Reinforcement Learning}},
-  booktitle = {Proceedings of the 54th Annual IEEE/ACM International Symposium on Microarchitecture},
-  year = {2021}
-}
-```
+    - 设置模拟指令数：5亿
 
-## License
+    - 仅运行带宽不受限的预取器，重新执行模拟：
 
-Distributed under the MIT License. See `LICENSE` for more information.
+        ```Bash
+        mkdir -p experiments_1C
+        cd experiments_1C
+        source ../jobfile.sh
+        ```
 
-## Contact
+实验运行通过自动化脚本管理，生成的原始输出`.out`文件包含各预取器的性能数据。
 
-Rahul Bera - write2bera@gmail.com
+## 5、数据提取
 
-## Acknowledgements
-We acklowledge support from SAFARI Research Group's industrial partners.
+1. 关键指标：
+
+    - 指令数（IPC）
+
+    - 各级缓存缺失次数（L1/L2/LLC）
+
+    - 预取器发出的预取请求数
+
+    - 有用预取数等
+
+2. 使用`rollup.pl`脚本汇总结果，生成结构化CSV文件：
+
+    ```bash
+    cd experiements_1C/
+    perl ../../scripts/rollup.pl --tlist ../MICRO_1C.tlist --exp ../MICRO_1C.exp --mfile ../rollup_1C_base_config.mfile > rollup.csv
+    ```
+
+可通过配置`mfile`文件指定需要统计的数据维度，CSV文件将作为后续分析的基础。
+
+## 6、结果汇总
+
+得到汇总数据CSV文件后，通过以下步骤分析结果：
+
+1. 将生成的 rollup.csv导入 Python Pandas、Excel 或其他数据分析工具。此次复现使用Python Pandas进行数据分析，相关python文件在experiment_1C文件夹中。
+2. 可绘制柱状图、折线图等，对比 Pythia 与 SPP、Bingo、MLOP 等基线预取器的 IPC 提升、预取准确率等指标。
+3. 与论文中关键图表进行定性、定量对比，验证复现一致性。
