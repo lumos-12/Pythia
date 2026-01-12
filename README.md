@@ -145,7 +145,7 @@ Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线�
     PYTHIA = --l2c_prefetcher_types=scooby --config=$(PYTHIA_HOME)/config/pythia.ini
     
     nopref						$(BASE) $(NOPREF)
-    spp						$(BASE) $(SPP_DEV2)
+    spp						    $(BASE) $(SPP_DEV2)
     bingo						$(BASE) $(BINGO)
     mlop						$(BASE) $(MLOP)
     pythia						$(BASE) $(PYTHIA)
