@@ -7,7 +7,7 @@
 - [3、准备工作负载跟踪](#3准备工作负载跟踪) 
 - [4、仿真配置与执行](#4仿真配置与执行) 
 - [5、数据提取](#5数据提取) 
-- [6、结果汇总](#6结果汇总)
+- [6、数据分析](#6数据分析)
 
 ## 1、简介
 
@@ -23,60 +23,55 @@ Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线�
 
 1. 操作系统：Ubuntu 20.04（虚拟机环境）
 
-2. 安装所有必要的依赖软件包，包括GCC编译套件、CMake构建系统以及md5sum校验工具：
+2. 安装所有必要的依赖软件包，包括Perl脚本解释器、GCC编译套件、CMake构建系统以及md5sum校验工具：
 
-    ```bash
+    ```Bash
+    sudo apt install perl
     sudo apt install gcc g++ cmake md5sum
     ```
     
-3. 安装必要的先决条件：
+3. 从GitHub官方仓库克隆Pythia项目的完整源代码：
 
-    ```bash
-    sudo apt install perl
-    ```
-    
-4. 从GitHub官方仓库克隆Pythia项目的完整源代码：
-
-    ```bash
+    ```Bash
     git clone https://github.com/CMU-SAFARI/Pythia.git
     ```
     
-5. 进入Pythia主目录，克隆bloomfilter库到`libbf`目录：
+4. 进入Pythia主目录，克隆bloomfilter库到`libbf`目录：
 
-    ```bash
+    ```Bash
     cd Pythia
     git clone https://github.com/mavam/libbf.git libbf
     ```
     
-6. libbf.a构建bloomfilter库，在build目录中创建静态库：
+5. libbf.a构建bloomfilter库，在build目录中创建静态库：
 
-    ```bash
+    ```Bash
     cd libbf
     mkdir build && cd build
     cmake ../
     make clean && make
     ```
     
-7. 编译ChampSim仿真器，构建单核/多核版本的Pythia，在`bin`目录生成可执行文件：
+6. 编译ChampSim仿真器，构建单核/多核版本的Pythia，在`bin`目录生成可执行文件：
 
-    ```bash
+    ```Bash
     cd $PYTHIA_HOME
     ./build_champsim.sh multi multi no 1
     ```
     
-8. 设置环境变量：
+7. 设置环境变量：
 
-    ```bash
+    ```Bash
     source setvars.sh
     ```
 
 ## 3、准备工作负载跟踪
 
-原始论文使用了来自SPEC CPU2006/2017、PARSEC、Ligra和CloudSuite等基准测试套件的150个内存密集型跟踪文件。本研究选择性下载了5个trace文件用于验证部分结论，并验证文件完整性。
+原始论文使用了来自SPEC CPU2006/2017、PARSEC、Ligra和CloudSuite等基准测试套件的150个内存密集型跟踪文件。复现过程中使用perl脚本自动下载了5个trace文件用于验证部分结论，并验证文件完整性。
 
 1. 创建trace存储目录并下载核心跟踪数据（除Ligra和PARSEC外）：
 
-    ```bash
+    ```Bash
     mkdir $PYTHIA_HOME/traces/
     cd $PYTHIA_HOME/scripts/
     perl download_traces.pl --csv artifact_traces.csv --dir ../traces/
@@ -84,12 +79,12 @@ Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线�
     
 2. 验证下载的跟踪文件完整性：
 
-    ```bash
+    ```Bash
     cd $PYTHIA_HOME/traces
     md5sum -c ../scripts/artifact_traces.md5
     ```
     
-3. 单独下载Ligra和PARSEC跟踪文件：
+3. 单独下载Ligra和PARSEC跟踪文件（复现时未下载）：
 
     - Ligra：[https://doi.org/10.5281/zenodo.14267977](https://doi.org/10.5281/zenodo.14267977)
 
@@ -123,7 +118,8 @@ Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线�
     ```
     
 5. 复现实验示例（与单特征预取器对比）
-   `MICRO_1C.tlist`文件示例，指定复现待使用的trace文件：
+   
+   `MICRO_1C.tlist`文件：指定复现待使用的trace文件：
 
     ```Plain Text
     NAME=482.sphinx3-417B
@@ -149,7 +145,7 @@ Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线�
         source ../jobfile.sh
         ```
 
-实验运行通过自动化脚本管理，生成的原始输出`.out`文件包含各预取器的性能数据。
+    实验运行通过自动化脚本管理，生成的原始输出`.out`文件包含各预取器的性能数据。
 
 ## 5、数据提取
 
@@ -170,9 +166,9 @@ Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线�
     perl ../../scripts/rollup.pl --tlist ../MICRO_1C.tlist --exp ../MICRO_1C.exp --mfile ../rollup_1C_base_config.mfile > rollup.csv
     ```
 
-可通过配置`mfile`文件指定需要统计的数据维度，CSV文件将作为后续分析的基础。
+    可通过配置`mfile`文件指定需要统计的数据维度，CSV文件将作为后续分析的基础。
 
-## 6、结果汇总
+## 6、数据分析
 
 得到汇总数据CSV文件后，通过以下步骤分析结果：
 
