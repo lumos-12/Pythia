@@ -1,5 +1,31 @@
 Core_0_IPC : sum
+Core_0_cycles : sum
+Core_0_instructions : sum
+
+Core_0_LLC_total_access : sum
+Core_0_LLC_total_hit : sum
 Core_0_LLC_total_miss : sum
 Core_0_LLC_load_miss : sum
 Core_0_LLC_RFO_miss : sum
 Core_0_LLC_writeback_miss : sum
+
+Core_0_LLC_prefetches : sum
+Core_0_LLC_prefetch_hit : sum
+Core_0_LLC_prefetch_miss : sum
+Core_0_LLC_prefetch_useful : sum
+Core_0_LLC_prefetch_useless : sum
+Core_0_LLC_prefetch_late : sum
+
+Core_0_L2C_prefetches : sum
+Core_0_L2C_prefetch_hit : sum
+Core_0_L2C_prefetch_miss : sum
+Core_0_L2C_prefetch_useful : sum
+Core_0_L2C_prefetch_useless : sum
+Core_0_L2C_prefetch_late : sum
+Core_0_L2C_prefetch_filled : sum
+
+Core_0_L2C_total_miss : sum
+Core_0_L1D_total_miss : sum
+
+Core_0_DRAM_reads : sum
+Core_0_DRAM_writes : sum
