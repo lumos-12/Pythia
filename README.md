@@ -131,19 +131,31 @@ Pythia是一个轻量级、可硬件实现的数据预取框架，利用在线�
     KNOBS=
     ```
     
-    修改`MICRO_1C.exp`文件配置预取器：
+    修改`MICRO_1C.exp`文件：指定预取器类型及相关参数配置
 
-    - 设置Warmup指令数：1亿
-
-    - 设置模拟指令数：5亿
-
-    - 仅运行带宽不受限的预取器，重新执行模拟：
-
-        ```Bash
-        mkdir -p experiments_1C
-        cd experiments_1C
-        source ../jobfile.sh
-        ```
+    ```Plain Text
+    BASE = --warmup_instructions=100000000 --simulation_instructions=500000000
+    NOPREF = --config=$(PYTHIA_HOME)/config/nopref.ini
+    STRIDE = --l2c_prefetcher_types=stride --config=$(PYTHIA_HOME)/config/stride.ini
+    SPP_DEV2 = --l2c_prefetcher_types=spp_dev2 --config=$(PYTHIA_HOME)/config/spp_dev2.ini
+    MLOP = --l2c_prefetcher_types=mlop --config=$(PYTHIA_HOME)/config/mlop.ini
+    BINGO = --l2c_prefetcher_types=bingo --config=$(PYTHIA_HOME)/config/bingo.ini
+    DSPATCH = --l2c_prefetcher_types=dspatch --config=$(PYTHIA_HOME)/config/dspatch.ini
+    SPP_PPF_DEV = --l2c_prefetcher_types=spp_ppf_dev --config=$(PYTHIA_HOME)/config/spp_ppf_dev.ini
+    PYTHIA = --l2c_prefetcher_types=scooby --config=$(PYTHIA_HOME)/config/pythia.ini
+    
+    nopref						$(BASE) $(NOPREF)
+    spp						$(BASE) $(SPP_DEV2)
+    bingo						$(BASE) $(BINGO)
+    mlop						$(BASE) $(MLOP)
+    pythia						$(BASE) $(PYTHIA)
+    ```
+    重新执行模拟
+    ```Bash
+    mkdir -p experiments_1C
+    cd experiments_1C
+    source ../jobfile.sh
+    ```
 
     实验运行通过自动化脚本管理，生成的原始输出`.out`文件包含各预取器的性能数据。
 
